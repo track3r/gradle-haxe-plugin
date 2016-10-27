@@ -89,7 +89,7 @@ public class HaxeBasePlugin implements Plugin<Project> {
 				// Inspired by JavaBasePlugin
 				// Add Haxe source set for "src/<name>/haxe"
 				Configuration compileConfiguration = project.getConfigurations().getByName(functionalSourceSet.getName());
-				DefaultHaxeSourceSet haxeSourceSet = instantiator.newInstance(DefaultHaxeSourceSet.class, HAXE_SOURCE_SET_NAME, functionalSourceSet, compileConfiguration, fileResolver);
+				HaxeSourceSet haxeSourceSet = instantiator.newInstance(HaxeSourceSet.class, HAXE_SOURCE_SET_NAME, functionalSourceSet, compileConfiguration, fileResolver);
 				haxeSourceSet.getSource().srcDir(String.format("src/%s/haxe", functionalSourceSet.getName()));
 				functionalSourceSet.add(haxeSourceSet);
 				logger.debug("Added {} in {}", haxeSourceSet, project.getPath());
@@ -105,7 +105,7 @@ public class HaxeBasePlugin implements Plugin<Project> {
 
 
 				// Add Haxe resource set to be used for embedded resources
-				DefaultHaxeResourceSet haxeResourceSet = instantiator.newInstance(DefaultHaxeResourceSet.class, HAXE_RESOURCE_SET_NAME, functionalSourceSet, fileResolver);
+				HaxeResourceSet haxeResourceSet = instantiator.newInstance(HaxeResourceSet.class, HAXE_RESOURCE_SET_NAME, functionalSourceSet, fileResolver);
 				functionalSourceSet.add(haxeResourceSet);
 				logger.debug("Added {} in {}", haxeResourceSet, project.getPath());
 			}
@@ -299,7 +299,7 @@ public class HaxeBasePlugin implements Plugin<Project> {
 		return compileTask;
 	}
 
-	public static <T extends HaxeCompile> T createCompileTask(final Project project, final HaxeBinaryBase<? super T> binary, Class<T> compileType) {
+	public static <T extends HaxeCompile> T createCompileTask(final Project project, final AbstractHaxeBinary<? super T> binary, Class<T> compileType) {
 		BinaryNamingScheme namingScheme = ((BinaryInternal) binary).getNamingScheme();
 		String compileTaskName = namingScheme.getTaskName("compile");
 
@@ -313,7 +313,7 @@ public class HaxeBasePlugin implements Plugin<Project> {
 		return compileTask;
 	}
 
-	public static <T extends HaxeCompile> T createCompileTaskInternal(final Project project, final HaxeBinaryBase<? super T> binary, Class<T> compileType, String compileTaskName) {
+	public static <T extends HaxeCompile> T createCompileTaskInternal(final Project project, final AbstractHaxeBinary<? super T> binary, Class<T> compileType, String compileTaskName) {
 		final T compileTask = project.getTasks().create(compileTaskName, compileType);
 		compileTask.setDescription("Compiles " + binary);
 		compileTask.getConventionMapping().map("embeddedResources", new Callable<Map<String, File>>() {
@@ -346,7 +346,7 @@ public class HaxeBasePlugin implements Plugin<Project> {
 		return compileTask;
 	}
 
-	private static File getDefaultCompileTarget(final Project project, final HaxeBinaryBase binary) {
+	private static File getDefaultCompileTarget(final Project project, final AbstractHaxeBinary binary) {
 		final BinaryNamingScheme namingScheme = ((BinaryInternal) binary).getNamingScheme();
 		return project.file(project.getBuildDir() + "/compiled-haxe/" + namingScheme.getOutputDirectoryBase() + "/compiled." + binary.getTargetPlatform().getName());
 	}
@@ -394,7 +394,7 @@ public class HaxeBasePlugin implements Plugin<Project> {
 		}
 	}
 
-	public static <T extends Har> T createSourceTask(final Project project, final HaxeBinaryBase<?> binary, Class<T> harType) {
+	public static <T extends Har> T createSourceTask(final Project project, final AbstractHaxeBinary<?> binary, Class<T> harType) {
 		final BinaryNamingScheme namingScheme = ((BinaryInternal) binary).getNamingScheme();
 
 		String sourceTaskName = namingScheme.getTaskName("bundle", "source");
@@ -445,7 +445,7 @@ public class HaxeBasePlugin implements Plugin<Project> {
 		return sourceTask;
 	}
 
-	private static Collection<SourceDirectorySet> getSources(Class<? extends LanguageSourceSet> type, HaxeBinaryBase<?> binary) {
+	private static Collection<SourceDirectorySet> getSources(Class<? extends LanguageSourceSet> type, AbstractHaxeBinary<?> binary) {
 		return Collections2.transform(binary.getSource().withType(type), new Function<LanguageSourceSet, SourceDirectorySet>() {
 			@Override
 			public SourceDirectorySet apply(LanguageSourceSet sourceSet) {

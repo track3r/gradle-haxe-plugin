@@ -23,7 +23,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
 
-public abstract class AbstractHaxeCompileTask extends ConventionTask implements HaxeCompilerParameters {
+public abstract class AbstractHaxeCompileTask extends ConventionTask implements HaxeCompilerParameters
+{
 
 	protected static final NotationParser<Object, Set<LanguageSourceSet>> notationParser = SourceSetNotationParser.parser();
 	protected final HaxeCompilerParameters params = new DefaultHaxeCompilerParameters();

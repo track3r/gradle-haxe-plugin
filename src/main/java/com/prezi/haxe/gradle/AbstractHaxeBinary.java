@@ -8,7 +8,7 @@ import org.gradle.api.DomainObjectSet;
 import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.internal.DefaultDomainObjectSet;
 
-public abstract class AbstractHaxeBinary<T extends HaxeCompile> extends AbstractBuildableModelElement implements HaxeBinaryBase<T>, BinaryInternal {
+public abstract class AbstractHaxeBinary<T extends HaxeCompile> extends AbstractBuildableModelElement implements BinaryInternal {
 	private final DomainObjectSet<LanguageSourceSet> source = new DefaultDomainObjectSet<LanguageSourceSet>(LanguageSourceSet.class);
 	private final String name;
 	private final Configuration configuration;
@@ -46,42 +46,34 @@ public abstract class AbstractHaxeBinary<T extends HaxeCompile> extends Abstract
 		return namingScheme.getDescription();
 	}
 
-	@Override
 	public Configuration getConfiguration() {
 		return configuration;
 	}
 
-	@Override
 	public DomainObjectSet<LanguageSourceSet> getSource() {
 		return source;
 	}
 
-	@Override
 	public TargetPlatform getTargetPlatform() {
 		return targetPlatform;
 	}
 
-	@Override
 	public Flavor getFlavor() {
 		return flavor;
 	}
 
-	@Override
 	public T getCompileTask() {
 		return compileTask;
 	}
 
-	@Override
 	public void setCompileTask(T compileTask) {
 		this.compileTask = compileTask;
 	}
 
-	@Override
 	public Har getSourceHarTask() {
 		return sourceHarTask;
 	}
 
-	@Override
 	public void setSourceHarTask(Har sourceHarTask) {
 		this.sourceHarTask = sourceHarTask;
 	}

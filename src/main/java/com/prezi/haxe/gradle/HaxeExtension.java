@@ -102,7 +102,7 @@ public class HaxeExtension extends DefaultHaxeCompilerParameters implements Seri
 
 		@Override
 		public TargetPlatform create(String platformName) {
-			return new DefaultTargetPlatform(platformName, project);
+			return new TargetPlatform(platformName, project);
 		}
 	}
 }
