@@ -16,6 +16,7 @@ def signArtifacts = sonatype || hasProperty("sign")
 apply plugin: 'groovy'
 apply plugin: 'maven'
 apply plugin: 'idea'
+apply plugin: 'ivy-publish'
 
 sourceCompatibility = "1.6"
 targetCompatibility = "1.6"
@@ -74,6 +75,26 @@ task run(type: Exec) {
 	commandLine = ["gradle", "clean", "compile", "testJs", "uploadArchives", "--no-daemon", "-Pmunit.kill-browser", "--info", "--stacktrace"]
 }
 
+publishing {
+	repositories {
+            ivy {
+                // change to point to your repo, e.g. http://my.org/repo
+                url "${System.properties['user.home']}/.duell/ivy"
+            }
+        }
+
+    publications {
+        ivy(IvyPublication) {
+            from components.java
+            //artifact(sourceJar) {
+             //   type "source"
+             //   conf "runtime"
+            //}
+        }
+    }
+}
+
+/*
 uploadArchives {
 	repositories {
 		repositories {
@@ -138,6 +159,7 @@ uploadArchives {
 		}
 	}
 }
+*/
 
 if (signArtifacts) {
 	apply plugin: "signing"
