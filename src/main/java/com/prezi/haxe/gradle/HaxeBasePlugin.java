@@ -19,9 +19,9 @@ import org.gradle.api.NamedDomainObjectContainer;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.Task;
-import org.gradle.api.artifacts.Configuration;
-import org.gradle.api.artifacts.Dependency;
-import org.gradle.api.artifacts.DependencySet;
+import org.gradle.api.artifacts.*;
+import org.gradle.api.artifacts.component.LibraryComponentSelector;
+import org.gradle.api.artifacts.component.ModuleComponentSelector;
 import org.gradle.api.file.CopySpec;
 import org.gradle.api.file.DuplicatesStrategy;
 import org.gradle.api.file.SourceDirectorySet;
@@ -243,14 +243,35 @@ public class HaxeBasePlugin implements Plugin<Project> {
 	private static void cacheHaxelibs(Project project)
 	{
 		logger.debug("cacheHaxelibs()");
-		for (Configuration conf : project.getConfigurations())
-		{
-			DependencySet deps = conf.getDependencies();
-			for (Dependency dep : deps)
-			{
-				logger.debug("Checking dep: {} {} {}", dep.getGroup(), dep.getName(), dep.getVersion());
+		project.getConfigurations().whenObjectAdded(new Action<Configuration>() {
+			@Override
+			public void execute(Configuration conf) {
+				logger.debug("Configuration added {}", conf.getName());
 			}
-		}
+		});
+
+		project.getConfigurations().all(new Action<Configuration>() {
+			@Override
+			public void execute(Configuration conf) {
+				logger.debug("Config {}", conf.getName());
+				conf.getResolutionStrategy().dependencySubstitution(new Action<DependencySubstitutions>() {
+					@Override
+					public void execute(DependencySubstitutions dependencySubstitutions) {
+						dependencySubstitutions.all(new Action<DependencySubstitution>() {
+							@Override
+							public void execute(DependencySubstitution dependencySubstitution) {
+								if (dependencySubstitution instanceof LibraryComponentSelector) {
+									ModuleComponentSelector mod = (ModuleComponentSelector) dependencySubstitution;
+									logger.debug("Checking dep: {} {} {}", mod.getGroup(), mod.getModule(), mod.getVersion());
+
+
+								}
+							}
+						});
+					}
+				});
+			}
+		});
 	}
 
 	private static void createBinaries(Project project, String name, TargetPlatform targetPlatform, Flavor flavor, DomainObjectSet<LanguageSourceSet> mainLanguageSets, DomainObjectSet<LanguageSourceSet> testLanguageSets, Configuration mainConfiguration, Configuration testConfiguration) {
