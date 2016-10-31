@@ -20,6 +20,7 @@ import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.Task;
 import org.gradle.api.artifacts.*;
+import org.gradle.api.artifacts.component.ComponentSelector;
 import org.gradle.api.artifacts.component.LibraryComponentSelector;
 import org.gradle.api.artifacts.component.ModuleComponentSelector;
 import org.gradle.api.file.CopySpec;
@@ -237,41 +238,7 @@ public class HaxeBasePlugin implements Plugin<Project> {
 		buildTask.dependsOn(BasePlugin.ASSEMBLE_TASK_NAME);
 		buildTask.dependsOn(checkTask);
 
-		cacheHaxelibs(project);
-	}
-
-	private static void cacheHaxelibs(Project project)
-	{
-		logger.debug("cacheHaxelibs()");
-		project.getConfigurations().whenObjectAdded(new Action<Configuration>() {
-			@Override
-			public void execute(Configuration conf) {
-				logger.debug("Configuration added {}", conf.getName());
-			}
-		});
-
-		project.getConfigurations().all(new Action<Configuration>() {
-			@Override
-			public void execute(Configuration conf) {
-				logger.debug("Config {}", conf.getName());
-				conf.getResolutionStrategy().dependencySubstitution(new Action<DependencySubstitutions>() {
-					@Override
-					public void execute(DependencySubstitutions dependencySubstitutions) {
-						dependencySubstitutions.all(new Action<DependencySubstitution>() {
-							@Override
-							public void execute(DependencySubstitution dependencySubstitution) {
-								if (dependencySubstitution instanceof LibraryComponentSelector) {
-									ModuleComponentSelector mod = (ModuleComponentSelector) dependencySubstitution;
-									logger.debug("Checking dep: {} {} {}", mod.getGroup(), mod.getModule(), mod.getVersion());
-
-
-								}
-							}
-						});
-					}
-				});
-			}
-		});
+		HaxelibCache.cacheHaxelibs(project);
 	}
 
 	private static void createBinaries(Project project, String name, TargetPlatform targetPlatform, Flavor flavor, DomainObjectSet<LanguageSourceSet> mainLanguageSets, DomainObjectSet<LanguageSourceSet> testLanguageSets, Configuration mainConfiguration, Configuration testConfiguration) {
