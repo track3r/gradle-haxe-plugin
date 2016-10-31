@@ -20,6 +20,8 @@ import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.Task;
 import org.gradle.api.artifacts.Configuration;
+import org.gradle.api.artifacts.Dependency;
+import org.gradle.api.artifacts.DependencySet;
 import org.gradle.api.file.CopySpec;
 import org.gradle.api.file.DuplicatesStrategy;
 import org.gradle.api.file.SourceDirectorySet;
@@ -234,6 +236,21 @@ public class HaxeBasePlugin implements Plugin<Project> {
 		}
 		buildTask.dependsOn(BasePlugin.ASSEMBLE_TASK_NAME);
 		buildTask.dependsOn(checkTask);
+
+		cacheHaxelibs(project);
+	}
+
+	private static void cacheHaxelibs(Project project)
+	{
+		logger.debug("cacheHaxelibs()");
+		for (Configuration conf : project.getConfigurations())
+		{
+			DependencySet deps = conf.getDependencies();
+			for (Dependency dep : deps)
+			{
+				logger.debug("Checking dep: {} {} {}", dep.getGroup(), dep.getName(), dep.getVersion());
+			}
+		}
 	}
 
 	private static void createBinaries(Project project, String name, TargetPlatform targetPlatform, Flavor flavor, DomainObjectSet<LanguageSourceSet> mainLanguageSets, DomainObjectSet<LanguageSourceSet> testLanguageSets, Configuration mainConfiguration, Configuration testConfiguration) {
