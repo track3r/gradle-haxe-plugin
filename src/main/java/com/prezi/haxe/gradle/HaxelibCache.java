@@ -14,10 +14,8 @@ import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
+import java.nio.file.*;
+import java.util.ArrayList;
 
 public class HaxelibCache {
     private static final Logger logger = LoggerFactory.getLogger(HaxelibCache.class);
@@ -107,6 +105,24 @@ public class HaxelibCache {
     private static void writeManifest(Path ivyPath, ModuleComponentSelector mod)
     {
         Path manifestPath = getManifestPath(ivyPath, mod);
+        ArrayList<String> lines = new ArrayList<String>();
+        lines.add("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
+        lines.add("<ivy-module version=\"2.0\" xmlns:m=\"http://ant.apache.org/ivy/maven\">");
+        lines.add("<info organisation=\"org.haxe.lib\" module=\""+ mod.getModule() + "\" revision=\"" + mod.getVersion() + "\" status=\"integration\" publication=\"20161027005847\"/>");
+        lines.add("<configurations/>");
+        lines.add("<publications>");
+        lines.add("<artifact name=\"" + mod.getModule() + "\" type=\"har\" ext=\"zip\" m:classifier=\"src\"/>");
+        lines.add("</publications>");
+        lines.add("<dependencies/>");
+        lines.add("</ivy-module>");
+        lines.add("");
+        try {
+            Files.write(manifestPath, lines, StandardOpenOption.CREATE);
+        }
+        catch (IOException e)
+        {
+            logger.error("Error creating manifest", e);
+        }
     }
 
     private static Path getLibPath(Path ivyPath, ModuleComponentSelector mod)
