@@ -1,19 +1,12 @@
 buildscript {
-	def gitVersion
-	if (hasProperty("release")) {
-		gitVersion = [ "git", "describe", "--match", "[0-9]*", "--dirty"].execute().text.trim()
-	} else {
-		gitVersion = [ "git", "describe", "--match", "[0-9]*", "--abbrev=0"].execute().text.trim() + "-SNAPSHOT"
-	}
-	println "Using version ${gitVersion}"
-
 	repositories {
 		mavenLocal()
 		mavenCentral()
 	}
-
 	dependencies {
-		classpath "com.prezi.haxe:gradle-haxe-plugin:${gitVersion}"
+		//classpath "com.prezi.haxe:gradle-haxe-plugin:${gitVersion}"
+		classpath group: 'com.prezi.haxe', name: 'gradle-haxe-plugin', version: '5.1'
+
 	}
 }
 
@@ -24,13 +17,7 @@ allprojects {
 	repositories {
 		mavenLocal()
 
-		maven {
-			credentials {
-				username nexusUser
-				password nexusPassword
-			}
-			url "https://artifactory.prezi.com/repo"
-		}
+
 	}
 }
 
