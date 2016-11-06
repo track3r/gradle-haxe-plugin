@@ -42,6 +42,8 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.function.Consumer;
+
 import org.gradle.api.internal.file.collections.DefaultDirectoryFileTreeFactory;
 
 public class HaxeBasePlugin implements Plugin<Project> {
@@ -67,23 +69,20 @@ public class HaxeBasePlugin implements Plugin<Project> {
 		this.fileResolver = fileResolver;
 	}
 
-	@Override
-	public void apply(final Project project) {
-		project.getPlugins().apply(BasePlugin.class);
+	public void createPlatformConfiguration(Project project)
+	{
 
-		// Add "haxe" extension
-		final HaxeExtension extension = project.getExtensions().create("haxe", HaxeExtension.class, project, instantiator);
+	}
+
+	public void createConfigurations(final Project project)
+	{
+		final HaxeExtension extension = (HaxeExtension)project.getExtensions().findByName("haxe");
 
 		final ProjectSourceSet projectSourceSet = extension.getSources();
-
-		// Add functional source sets for main code
 		final FunctionalSourceSet main = projectSourceSet.maybeCreate("main");
 		final FunctionalSourceSet test = projectSourceSet.maybeCreate("test");
-		logger.debug("Created {} and {} in {}", main, test, project.getPath());
 		final Configuration mainCompile = maybeCreateCompileConfigurationFor(project, "main");
 		final Configuration testCompile = maybeCreateCompileConfigurationFor(project, "test");
-		testCompile.extendsFrom(mainCompile);
-		logger.debug("Created {} and {} in {}", mainCompile, testCompile, project.getPath());
 
 		// For each source set create a configuration and language source sets
 		projectSourceSet.all(new Action<FunctionalSourceSet>() {
@@ -115,20 +114,34 @@ public class HaxeBasePlugin implements Plugin<Project> {
 
 		});
 
-		NamedDomainObjectContainer<TargetPlatform> targetPlatforms = extension.getTargetPlatforms();
+		final NamedDomainObjectContainer<TargetPlatform> targetPlatforms = extension.getTargetPlatforms();
 
 		// For each target platform add functional source sets
 		targetPlatforms.all(new Action<TargetPlatform>() {
 			@Override
 			public void execute(final TargetPlatform targetPlatform) {
-				logger.debug("Configuring {} in {}", targetPlatform, project.getPath());
+				logger.debug("Configuring '{}' in '{}'", targetPlatform, project.getPath());
 
 				// Create platform configurations
 				final Configuration platformMainCompile = maybeCreateCompileConfigurationFor(project, targetPlatform.getName());
 				final Configuration platformTestCompile = maybeCreateCompileConfigurationFor(project, targetPlatform.getName() + "Test");
-				platformMainCompile.extendsFrom(mainCompile);
-				platformTestCompile.extendsFrom(testCompile);
-				platformTestCompile.extendsFrom(platformMainCompile);
+
+				if (targetPlatform.getParent() == null) {
+
+					platformMainCompile.extendsFrom(mainCompile);
+					platformTestCompile.extendsFrom(testCompile);
+					platformTestCompile.extendsFrom(platformMainCompile);
+				}
+				else
+				{
+					TargetPlatform parent = targetPlatform.getParent();
+					Configuration parentConf = project.getConfigurations().getByName(parent.getName());
+					Configuration parentTestConf = project.getConfigurations().getByName(parent.getName() + "Test");
+
+					platformMainCompile.extendsFrom(parentConf);
+					platformTestCompile.extendsFrom(parentTestConf);
+				}
+
 				logger.debug("Added {} and {} in {}", platformMainCompile, platformTestCompile, project.getPath());
 
 				final FunctionalSourceSet platformMain = projectSourceSet.maybeCreate(targetPlatform.getName());
@@ -138,7 +151,11 @@ public class HaxeBasePlugin implements Plugin<Project> {
 				DomainObjectSet<LanguageSourceSet> mainLanguageSets = getLanguageSets(main, platformMain);
 				DomainObjectSet<LanguageSourceSet> testLanguageSets = getLanguageSets(test, platformTest);
 
-				createBinaries(project, targetPlatform.getName(), targetPlatform, null, mainLanguageSets, testLanguageSets, platformMainCompile, platformTestCompile);
+				if (!targetPlatform.getName().equals("cpp"))
+				{
+					createBinaries(project, targetPlatform.getName(), targetPlatform, null, mainLanguageSets,
+							testLanguageSets, platformMainCompile, platformTestCompile);
+				}
 
 				// Add some flavor
 				targetPlatform.getFlavors().all(new Action<Flavor>() {
@@ -146,7 +163,8 @@ public class HaxeBasePlugin implements Plugin<Project> {
 					public void execute(Flavor flavor) {
 						logger.debug("Configuring {} with {} in {}", targetPlatform, flavor, project.getPath());
 
-						String flavorName = targetPlatform.getName() + Character.toUpperCase(flavor.getName().charAt(0)) + flavor.getName().substring(1);
+						String flavorName = targetPlatform.getName() + Character.toUpperCase(flavor.getName().charAt(0))
+								+ flavor.getName().substring(1);
 
 						Configuration flavorMainCompile = maybeCreateCompileConfigurationFor(project, flavorName);
 						Configuration flavorTestCompile = maybeCreateCompileConfigurationFor(project, flavorName + "Test");
@@ -167,6 +185,52 @@ public class HaxeBasePlugin implements Plugin<Project> {
 				});
 			}
 		});
+
+		final Project project1 = project;
+		targetPlatforms.whenObjectAdded(new Action<TargetPlatform>() {
+			@Override
+			public void execute(TargetPlatform targetPlatform) {
+				targetPlatforms.forEach(new Consumer<TargetPlatform>() {
+					@Override
+					public void accept(final TargetPlatform targetPlatform)
+					{
+						final Configuration platformMainCompile = maybeCreateCompileConfigurationFor(project1, targetPlatform.getName());
+						final Configuration platformTestCompile = maybeCreateCompileConfigurationFor(project1, targetPlatform.getName() + "Test");
+
+						if (targetPlatform.getParent() == null)
+						{
+							return;
+						}
+
+						TargetPlatform parent = targetPlatform.getParent();
+						Configuration parentConf = project1.getConfigurations().getByName(parent.getName());
+						Configuration parentTestConf = project1.getConfigurations().getByName(parent.getName() + "Test");
+
+						platformMainCompile.extendsFrom(parentConf);
+						platformTestCompile.extendsFrom(parentTestConf);
+					}
+				});
+			}
+		});
+
+
+
+	}
+
+	@Override
+	public void apply(final Project project) {
+		project.getPlugins().apply(BasePlugin.class);
+
+		// Add "haxe" extension
+		final HaxeExtension extension = project.getExtensions().create("haxe", HaxeExtension.class, project, instantiator);
+
+		//Add root configs
+		final Configuration mainCompile = maybeCreateCompileConfigurationFor(project, "main");
+		final Configuration testCompile = maybeCreateCompileConfigurationFor(project, "test");
+		testCompile.extendsFrom(mainCompile);
+		logger.debug("Created {} and {} in {}", mainCompile, testCompile, project.getPath());
+
+		createConfigurations(project);
 
 		// Add checkHaxeVersion task
 		final CheckHaxeVersion checkVersionTask = project.getTasks().create(CHECK_HAXE_VERSION_TASK_NAME, CheckHaxeVersion.class);
@@ -335,8 +399,15 @@ public class HaxeBasePlugin implements Plugin<Project> {
 		});
 		compileTask.getConventionMapping().map("targetPlatform", new Callable<String>() {
 			@Override
-			public String call() throws Exception {
-				return binary.getTargetPlatform().getName();
+			public String call() throws Exception
+			{
+				TargetPlatform platform = binary.getTargetPlatform();
+				if (platform.getParent() != null)
+				{
+					return platform.getParent().getName();
+				}
+				
+				return platform.getName();
 			}
 		});
 		compileTask.setConventionMapping(project.getExtensions().getByType(HaxeExtension.class), binary.getTargetPlatform(), binary.getFlavor());

@@ -5,21 +5,34 @@ import com.google.common.collect.Collections2;
 import groovy.lang.Closure;
 import org.gradle.api.*;
 import org.gradle.util.ConfigureUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.Serializable;
 
 public class TargetPlatform extends DefaultHaxeCompilerParameters implements Named, Serializable {
+	private static final Logger logger = LoggerFactory.getLogger(TargetPlatform.class);
 	private final String name;
 	private final NamedDomainObjectContainer<Flavor> flavors;
+	private TargetPlatform parent;
+	protected Project project;
 
 	public TargetPlatform(String name, Project project) {
 		this.name = name;
 		this.flavors = project.container(Flavor.class, new FlavorNamedDomainObjectFactory());
+		this.project = project;
 	}
 
 	@Override
 	public String getName() {
 		return name;
+	}
+
+	public TargetPlatform getParent(){return  parent;}
+	public void setParent(TargetPlatform p)
+	{
+		logger.debug("Setting '{}' parent to '{}'", getName(), p.getName());
+		parent = p;
 	}
 
 	public NamedDomainObjectContainer<Flavor> getFlavors() {

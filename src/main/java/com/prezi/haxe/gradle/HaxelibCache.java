@@ -116,7 +116,9 @@ public class HaxelibCache {
         lines.add("<dependencies/>");
         lines.add("</ivy-module>");
         lines.add("");
-        try {
+
+        try
+        {
             Files.write(manifestPath, lines, StandardOpenOption.CREATE);
         }
         catch (IOException e)
