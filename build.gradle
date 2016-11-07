@@ -35,6 +35,7 @@ dependencies {
 	compile "org.webjars:requirejs:2.1.8"
 	compile "commons-io:commons-io:2.4"
 	compile "com.google.guava:guava:17.0"
+	compile "com.google.code.gson:gson:2.6.2"
 
 	// Required only for the incubating stuff brought over from Gradle 2.0
 	compile "commons-lang:commons-lang:2.6"

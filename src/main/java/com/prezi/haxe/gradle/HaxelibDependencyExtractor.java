@@ -3,6 +3,9 @@ package com.prezi.haxe.gradle;
 import com.google.common.base.Predicate;
 import com.google.common.base.Strings;
 import com.google.common.collect.Iterables;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import org.apache.commons.io.IOUtils;
 import org.gradle.api.Action;
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.Configuration;
@@ -20,7 +23,9 @@ import org.gradle.api.internal.project.ProjectInternal;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Map;
+import java.util.Scanner;
 import java.util.Set;
 import java.util.jar.Manifest;
 
@@ -157,9 +162,22 @@ public class HaxelibDependencyExtractor {
 				} catch (IOException ex) {
 					throw new RuntimeException(ex);
 				}
-			} else if ((details.getName().equals("haxelib.json") || details.getName().equals("haxelib.xml")) && details.getRelativePath().getParent() != null) {
+			} else if ((details.getName().equals("haxelib.json") || details.getName().equals("haxelib.xml")) && details.getRelativePath().getParent() != null)
+			{
 				type = HaxelibType.HAXELIB;
 				libraryRoot = details.getRelativePath().getParent().getFile(libraryRoot);
+				if (details.getName().equals("haxelib.json"))
+				{
+					JsonParser parser = new JsonParser();
+
+					Scanner s = new Scanner(details.open()).useDelimiter("\\A");
+					JsonObject haxelibConf = parser.parse(s.hasNext() ? s.next() : "").getAsJsonObject();
+					if (haxelibConf.has("classPath"))
+					{
+						libraryRoot = new File(libraryRoot, haxelibConf.get("classPath").getAsString());
+					}
+				}
+
 				details.stopVisiting();
 			}
 		}
